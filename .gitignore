@@ -1,0 +1,43 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+
+# Env
+.env
+.env.*
+
+# Logs
+*.log
+
+# Build artifacts
+build/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# Flutter/Dart
+.flutter-plugins
+.flutter-plugins-dependencies
+.dart_tool/
+.packages
+.pub-cache/
+flutter_build/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Node (if any tooling is added later)
+node_modules/
+
+# iOS/Android (Flutter)
+ios/Pods/
+android/.gradle/
+android/app/build/
