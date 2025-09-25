@@ -55,7 +55,7 @@ class _AlertsCarouselState extends State<AlertsCarousel> {
                 const SizedBox(width: 12),
                 TextButton(
                   onPressed: widget.onViewAll,
-                  style: TextButton.styleFrom(foregroundColor: Colors.white, backgroundColor: Colors.white.withOpacity(0.2)),
+style: TextButton.styleFrom(foregroundColor: Colors.white, backgroundColor: Colors.white.withValues(alpha: 0.2)),
                   child: const Text('VIEW ALL'),
                 )
               ],

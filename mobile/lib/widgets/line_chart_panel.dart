@@ -19,6 +19,12 @@ class LineChartPanel extends StatelessWidget {
   final PeriodOption period;
   final ValueChanged<MetricOption> onMetricChanged;
   final ValueChanged<PeriodOption> onPeriodChanged;
+  final bool useTimeAxis;
+  final String Function(double)? xLabel;
+  final double? minX;
+  final double? maxX;
+  final int targetXTicks;
+  final VoidCallback? onRefresh;
 
   const LineChartPanel({
     super.key,
@@ -27,6 +33,12 @@ class LineChartPanel extends StatelessWidget {
     required this.period,
     required this.onMetricChanged,
     required this.onPeriodChanged,
+    this.useTimeAxis = false,
+    this.xLabel,
+    this.minX,
+    this.maxX,
+    this.targetXTicks = 5,
+    this.onRefresh,
   });
 
   static const metrics = [
@@ -55,6 +67,12 @@ class LineChartPanel extends StatelessWidget {
               children: [
                 Text('Historical Trends', style: textTheme.titleMedium!.copyWith(fontWeight: FontWeight.w700)),
                 const Spacer(),
+                if (onRefresh != null)
+                  IconButton(
+                    tooltip: 'Refresh',
+                    icon: const Icon(Icons.refresh),
+                    onPressed: onRefresh,
+                  ),
                 DropdownButtonHideUnderline(
                   child: DropdownButton<MetricOption>(
                     dropdownColor: Theme.of(context).colorScheme.surface,
@@ -82,12 +100,51 @@ class LineChartPanel extends StatelessWidget {
               height: 220,
               child: LineChart(
                 LineChartData(
-                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (v) => FlLine(color: Colors.white12, strokeWidth: 1)),
-                  titlesData: FlTitlesData(show: false),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: true,
+                    getDrawingHorizontalLine: (v) => FlLine(color: Colors.white12, strokeWidth: 1),
+                    getDrawingVerticalLine: (v) => FlLine(color: Colors.white12, strokeWidth: 1),
+                  ),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: useTimeAxis,
+                        reservedSize: 36,
+                        getTitlesWidget: (value, meta) {
+                          if (!useTimeAxis) return const SizedBox.shrink();
+                          final text = (xLabel != null) ? xLabel!(value) : value.toStringAsFixed(0);
+                          return SideTitleWidget(
+                            axisSide: meta.axisSide,
+                            space: 6,
+                            child: Text(text, style: const TextStyle(fontSize: 10, color: Colors.white70)),
+                          );
+                        },
+                        interval: () {
+if (!useTimeAxis || points.isEmpty) return 1.0;
+                          final start = minX ?? points.first.x;
+                          final end = maxX ?? points.last.x;
+                          final span = (end - start).abs();
+                          if (span <= 0) return 1.0;
+                          // Aim for ~targetXTicks on screen
+                          return span / targetXTicks;
+                        }(),
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: true, reservedSize: 40, interval: null),
+                    ),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
                   borderData: FlBorderData(show: true, border: Border.all(color: Colors.white12)),
                   lineTouchData: LineTouchData(
+                    enabled: true,
                     touchTooltipData: LineTouchTooltipData(),
                   ),
+                  minX: minX,
+                  maxX: maxX,
                   lineBarsData: [
                     LineChartBarData(
                       spots: points,
@@ -95,7 +152,7 @@ class LineChartPanel extends StatelessWidget {
                       color: Colors.tealAccent,
                       barWidth: 3,
                       dotData: FlDotData(show: false),
-                      belowBarData: BarAreaData(show: true, color: Colors.tealAccent.withOpacity(0.15)),
+belowBarData: BarAreaData(show: true, color: Colors.tealAccent.withValues(alpha: 0.15)),
                     )
                   ],
                 ),

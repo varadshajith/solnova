@@ -18,7 +18,7 @@ class KpiCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              decoration: BoxDecoration(color: accent.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+decoration: BoxDecoration(color: accent.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10)),
               padding: const EdgeInsets.all(10),
               child: Icon(icon, color: accent, size: 20),
             ),

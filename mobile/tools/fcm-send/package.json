@@ -1,0 +1,13 @@
+{
+  "name": "fcm-send",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node send.js --help"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "yargs": "^17.7.2"
+  }
+}
