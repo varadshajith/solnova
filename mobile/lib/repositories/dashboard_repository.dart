@@ -104,4 +104,4 @@ final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
   final api = ref.watch(apiClientProvider);
   final cache = ref.watch(cacheStoreProvider);
   return DashboardRepository(api, cache);
-});
+}, dependencies: [apiClientProvider, cacheStoreProvider]);
