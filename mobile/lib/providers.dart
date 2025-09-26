@@ -11,17 +11,17 @@ import 'models/device.dart';
 final realtimeSummaryProvider = FutureProvider.family<SummaryResult, String>((ref, gridId) async {
   final repo = ref.watch(dashboardRepositoryProvider);
   return repo.fetchSummary(gridId);
-});
+}, dependencies: [dashboardRepositoryProvider]);
 
 final alertsProvider = FutureProvider.family<List<AlertItem>, String>((ref, gridId) async {
   final repo = ref.watch(dashboardRepositoryProvider);
   return repo.fetchAlerts(gridId, status: 'active');
-});
+}, dependencies: [dashboardRepositoryProvider]);
 
 final alertsByStatusProvider = FutureProvider.family.autoDispose<List<AlertItem>, ({String gridId, String status})>((ref, p) async {
   final repo = ref.watch(dashboardRepositoryProvider);
   return repo.fetchAlerts(p.gridId, status: p.status);
-});
+}, dependencies: [dashboardRepositoryProvider]);
 
 class HistoricalQuery {
   final String gridId;
@@ -34,9 +34,9 @@ class HistoricalQuery {
 final historicalProvider = FutureProvider.family<List<HistoricalPoint>, HistoricalQuery>((ref, q) async {
   final repo = ref.watch(dashboardRepositoryProvider);
   return repo.fetchHistorical(q.gridId, q.metric, q.period, granularity: q.granularity);
-});
+}, dependencies: [dashboardRepositoryProvider]);
 
 final devicesProvider = FutureProvider.family<List<DeviceItem>, String>((ref, gridId) async {
   final repo = ref.watch(dashboardRepositoryProvider);
   return repo.fetchDevices(gridId);
-});
+}, dependencies: [dashboardRepositoryProvider]);

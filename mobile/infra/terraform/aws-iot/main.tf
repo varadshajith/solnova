@@ -61,7 +61,7 @@ resource "aws_iot_topic_rule" "telemetry_to_kinesis" {
   name        = "${local.name_prefix}-telemetry-to-kinesis"
   description = "Route telemetry MQTT to Kinesis"
   enabled     = true
-  sql         = "SELECT * FROM 'microgrid/+\/device/+\/telemetry'"
+  sql         = "SELECT * FROM 'microgrid/+/device/+/telemetry'"
   sql_version = "2016-03-23"
 
   kinesis {
@@ -76,7 +76,7 @@ resource "aws_iot_topic_rule" "alerts_to_kinesis" {
   name        = "${local.name_prefix}-alerts-to-kinesis"
   description = "Route alerts MQTT to Kinesis"
   enabled     = true
-  sql         = "SELECT * FROM 'microgrid/+\/alerts'"
+  sql         = "SELECT * FROM 'microgrid/+/alerts'"
   sql_version = "2016-03-23"
 
   kinesis {
@@ -103,7 +103,7 @@ resource "aws_iot_policy" "device_policy" {
         "Effect": "Allow",
         "Action": ["iot:Publish"],
         "Resource": [
-          "arn:aws:iot:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:topic/microgrid/*/device/${iot:ClientId}/telemetry"
+          "arn:aws:iot:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:topic/microgrid/*/device/$${iot:ClientId}/telemetry"
         ]
       },
       {
