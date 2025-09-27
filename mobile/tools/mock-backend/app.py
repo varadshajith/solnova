@@ -61,6 +61,15 @@ async def alerts(grid_id: str = "grid-001"):
 
 @app.get("/api/dashboard/historical")
 async def historical(metric: str = "consumption_kW", period: str = "1h"):
+    # existing legacy route used by earlier mobile builds
+    return await _build_historical(metric=metric, period=period)
+
+@app.get("/api/historical/{grid_id}/{metric}")
+async def historical_v2(grid_id: str, metric: str, period: str = "1h"):
+    # new route shape expected by the app repository
+    return await _build_historical(metric=metric, period=period)
+
+async def _build_historical(metric: str, period: str):
     points = []
     now = datetime.utcnow()
     if period == "1h":

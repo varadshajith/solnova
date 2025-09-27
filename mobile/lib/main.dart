@@ -8,6 +8,8 @@ import 'package:http/http.dart' as http;
 
 import 'theme.dart';
 import 'widgets/gauge_kpi.dart';
+import 'widgets/battery_pack.dart';
+import 'widgets/semi_gauge.dart';
 import 'widgets/line_chart_panel.dart';
 import 'widgets/header.dart';
 import 'widgets/alerts_carousel.dart';
@@ -302,37 +304,32 @@ return AlertsCarousel(messages: messages, onViewAll: () {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: GaugeKpi(
+Expanded(
+                        child: SemiGauge(
                           title: 'Consumption',
                           value: sr.data.consumptionKW,
                           unit: 'kW',
                           min: 0,
-                          max: 20,
-                          color: Colors.orangeAccent,
+                          max: 200,
+                          target: 140,
+                          color: const Color(0xFF2196F3), // blue
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: GaugeKpi(
+Expanded(
+                        child: SemiGauge(
                           title: 'Generation',
                           value: sr.data.generationKW,
                           unit: 'kW',
                           min: 0,
-                          max: 20,
-                          color: Colors.lightBlueAccent,
+                          max: 200,
+                          target: 140,
+                          color: const Color(0xFF00E676), // green
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: GaugeKpi(
-                          title: 'Battery SoC',
-                          value: sr.data.batterySoc,
-                          unit: '%',
-                          min: 0,
-                          max: 100,
-                          color: Colors.greenAccent,
-                        ),
+Expanded(
+                        child: BatteryPack(soc: sr.data.batterySoc, vertical: true),
                       ),
                     ],
                   ),
@@ -358,78 +355,107 @@ return AlertsCarousel(messages: messages, onViewAll: () {
             );
           }),
           const SizedBox(height: 16),
-// Historical chart
-          Builder(builder: (context) {
-            return histAsync.when(
-              loading: () => const Card(child: SizedBox(height: 220)),
-              error: (_, __) => const Text('Failed to load historical data'),
-              data: (points) {
-                // Use time (ms since epoch) for x-axis
-                final spots = [for (final p in points) FlSpot(p.time.millisecondsSinceEpoch.toDouble(), p.value)];
-                String fmt(double x) {
-                  final dt = DateTime.fromMillisecondsSinceEpoch(x.toInt(), isUtc: false);
-                  // Simple formatting based on selected period
-                  switch (period.value.value) {
-                    case '1h':
-                      return '${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
-                    case '24h':
-                    case '7d':
-                    case '30d':
-                    default:
-                      return '${dt.month}/${dt.day}';
-                  }
-                }
-                final minEpoch = points.isNotEmpty ? points.first.time.millisecondsSinceEpoch.toDouble() : 0;
-                final maxEpoch = points.isNotEmpty ? points.last.time.millisecondsSinceEpoch.toDouble() : 1;
-                final span = (maxEpoch - minEpoch).abs();
-                final selMin = minEpoch + span * histRange.value.start;
-                final selMax = minEpoch + span * histRange.value.end;
-                final compactLabels = useState(false);
-                return Column(
-                  children: [
-                    LineChartPanel(
-                      points: spots,
-                      metric: metric.value,
-                      period: period.value,
-                      onMetricChanged: (m) => metric.value = m,
-                      onPeriodChanged: (p) => period.value = p,
-                      useTimeAxis: true,
-                      xLabel: fmt,
-                      minX: selMin,
-                      maxX: selMax,
-targetXTicks: compactLabels.value ? 3 : 5,
-                      onRefresh: () {
-                        ref.invalidate(historicalProvider);
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    // Simple range selector + label density toggle
-                    Row(
-                      children: [
-                        const Text('Range', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                        Expanded(
-                          child: RangeSlider(
-                            values: histRange.value,
-                            min: 0,
-                            max: 1,
-                            divisions: 20,
-                            labels: RangeLabels('${(histRange.value.start * 100).round()}%', '${(histRange.value.end * 100).round()}%'),
-                            onChanged: (v) => histRange.value = v,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ChoiceChip(
-                          label: const Text('Compact labels'),
-                          selected: compactLabels.value,
-                          onSelected: (s) => compactLabels.value = s,
-                        ),
-                      ],
-                    ),
+// Historical chart with tabs
+          DefaultTabController(
+            length: 3,
+            initialIndex: () {
+              switch (metric.value.value) {
+                case 'consumption_kW':
+                  return 0;
+                case 'generation_kW':
+                  return 1;
+                case 'battery_soc':
+                default:
+                  return 2;
+              }
+            }(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TabBar(
+                  tabs: const [
+                    Tab(text: 'Consumption'),
+                    Tab(text: 'Generation'),
+                    Tab(text: 'Battery SoC'),
                   ],
-                );
-              },
-            );
-          }),
+                  onTap: (i) {
+                    if (i == 0) metric.value = const MetricOption('Power Consumption', 'consumption_kW');
+                    if (i == 1) metric.value = const MetricOption('Power Generation', 'generation_kW');
+                    if (i == 2) metric.value = const MetricOption('Battery SoC', 'battery_soc');
+                  },
+                ),
+                const SizedBox(height: 8),
+                Builder(builder: (context) {
+                  return histAsync.when(
+                    loading: () => const Card(child: SizedBox(height: 220)),
+                    error: (_, __) => const Text('Failed to load historical data'),
+                    data: (points) {
+                      final spots = [for (final p in points) FlSpot(p.time.millisecondsSinceEpoch.toDouble(), p.value)];
+                      String fmt(double x) {
+                        final dt = DateTime.fromMillisecondsSinceEpoch(x.toInt(), isUtc: false);
+                        switch (period.value.value) {
+                          case '1h':
+                            return '${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+                          case '24h':
+                          case '7d':
+                          case '30d':
+                          default:
+                            return '${dt.month}/${dt.day}';
+                        }
+                      }
+                      final minEpoch = points.isNotEmpty ? points.first.time.millisecondsSinceEpoch.toDouble() : 0;
+                      final maxEpoch = points.isNotEmpty ? points.last.time.millisecondsSinceEpoch.toDouble() : 1;
+                      final span = (maxEpoch - minEpoch).abs();
+                      final selMin = minEpoch + span * histRange.value.start;
+                      final selMax = minEpoch + span * histRange.value.end;
+                      final compactLabels = useState(false);
+                      return Column(
+                        children: [
+                          LineChartPanel(
+                            points: spots,
+                            metric: metric.value,
+                            period: period.value,
+                            onMetricChanged: (m) => metric.value = m,
+                            onPeriodChanged: (p) => period.value = p,
+                            useTimeAxis: true,
+                            xLabel: fmt,
+                            minX: selMin,
+                            maxX: selMax,
+                            targetXTicks: compactLabels.value ? 3 : 5,
+                            onRefresh: () {
+                              ref.invalidate(historicalProvider);
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Text('Range', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                              Expanded(
+                                child: RangeSlider(
+                                  values: histRange.value,
+                                  min: 0,
+                                  max: 1,
+                                  divisions: 20,
+                                  labels: RangeLabels('${(histRange.value.start * 100).round()}%', '${(histRange.value.end * 100).round()}%'),
+                                  onChanged: (v) => histRange.value = v,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ChoiceChip(
+                                label: const Text('Compact labels'),
+                                selected: compactLabels.value,
+                                onSelected: (s) => compactLabels.value = s,
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }),
+              ],
+            ),
+          ),
         ],
         ),
       ),
